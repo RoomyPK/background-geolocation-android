@@ -54,7 +54,7 @@ public class BatchManager {
         return LocationContentProvider.getContentUri(authority);
     }
 
-    private File createBatchFromTemplate(Long batchStartMillis, Integer syncThreshold, LocationTemplate template) throws IOException {
+    private File createBatchFromTemplate(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken) throws IOException {
         logger.info("Creating batch {}", batchStartMillis);
 
         ContentResolver resolver = context.getContentResolver();
@@ -91,13 +91,21 @@ public class BatchManager {
             FileOutputStream fs = new FileOutputStream(file);
             writer = new LocationWriter(fs, template);
 
+            writer.beginObject();
+
+            writer.name("device_id").value(deviceId);
+            writer.name("token").value(authToken);
+            writer.name("locations");
+
             writer.beginArray();
             while (cursor.moveToNext()) {
                 BackgroundLocation location = BackgroundLocation.fromCursor(cursor);
                 writer.write(location);
             }
-
             writer.endArray();
+
+            writer.endObject();
+
             writer.close();
             fs.close();
 
@@ -119,18 +127,18 @@ public class BatchManager {
         }
     }
 
-    public File createBatch(Long batchStartMillis, Integer syncThreshold, LocationTemplate template) throws IOException {
+    public File createBatch(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken) throws IOException {
         LocationTemplate tpl;
         if (template != null) {
             tpl = template;
         } else {
             tpl = LocationTemplateFactory.getDefault();
         }
-        return createBatchFromTemplate(batchStartMillis, syncThreshold, tpl);
+        return createBatchFromTemplate(batchStartMillis, syncThreshold, tpl, deviceId, authToken);
     }
 
     public File createBatch(Long batchStartMillis, Integer syncThreshold) throws IOException {
-        return createBatch(batchStartMillis, syncThreshold, null);
+        return createBatch(batchStartMillis, syncThreshold, null, "", "");
     }
 
 
@@ -226,6 +234,24 @@ public class BatchManager {
 
         public void endArray() throws IOException {
             writer.endArray();
+        }
+
+        public void beginObject() throws IOException {
+            this.writer.beginObject();
+        }
+
+        public void endObject() throws IOException {
+            this.writer.endObject();
+        }
+
+        public LocationWriter name(String name) throws IOException {
+            this.writer.name(name);
+            return this;
+        }
+
+        public LocationWriter value(String value) throws IOException {
+            this.writer.value(value);
+            return this;
         }
 
         public void close() throws IOException {

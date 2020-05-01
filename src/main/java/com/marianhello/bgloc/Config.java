@@ -63,6 +63,9 @@ public class Config implements Parcelable
     private HashMap httpHeaders;
     private Integer maxLocations;
     private LocationTemplate template;
+    private String deviceId;
+    private String authToken;
+    private String authTokenURL;
 
     public Config () {
     }
@@ -95,6 +98,9 @@ public class Config implements Parcelable
         if (config.template instanceof AbstractLocationTemplate) {
             this.template = ((AbstractLocationTemplate)config.template).clone();
         }
+        this.deviceId = config.deviceId;
+        this.authToken = config.authToken;
+        this.authTokenURL = config.authTokenURL;
     }
 
     private Config(Parcel in) {
@@ -123,6 +129,9 @@ public class Config implements Parcelable
         Bundle bundle = in.readBundle();
         setHttpHeaders((HashMap<String, String>) bundle.getSerializable("httpHeaders"));
         setTemplate((LocationTemplate) bundle.getSerializable(AbstractLocationTemplate.BUNDLE_KEY));
+        setDeviceId(in.readString());
+        setAuthToken(in.readString());
+        setAuthTokenURL(in.readString());
     }
 
     public static Config getDefault() {
@@ -151,6 +160,9 @@ public class Config implements Parcelable
         config.httpHeaders = null;
         config.maxLocations = 10000;
         config.template = null;
+        config.deviceId = "";
+        config.authToken = "";
+        config.authTokenURL = "";
 
         return config;
     }
@@ -187,6 +199,9 @@ public class Config implements Parcelable
         bundle.putSerializable("httpHeaders", getHttpHeaders());
         bundle.putSerializable(AbstractLocationTemplate.BUNDLE_KEY, (AbstractLocationTemplate) getTemplate());
         out.writeBundle(bundle);
+        out.writeString(getDeviceId());
+        out.writeString(getAuthToken());
+        out.writeString(getAuthTokenURL());
     }
 
     public static final Parcelable.Creator<Config> CREATOR
@@ -520,6 +535,54 @@ public class Config implements Parcelable
         this.template = template;
     }
 
+    public boolean hasDeviceId() {
+        return this.deviceId != null;
+    }
+
+    public boolean hasValidDeviceId() {
+        return this.deviceId != null && !this.deviceId.isEmpty();
+    }
+
+    public String getDeviceId() {
+        return this.deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public boolean hasAuthToken() {
+        return this.authToken != null;
+    }
+
+    public boolean hasValidAuthToken() {
+        return this.authToken != null && !this.authToken.isEmpty();
+    }
+
+    public String getAuthToken() {
+        return this.authToken;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+
+    public boolean hasAuthTokenURL() {
+        return this.authTokenURL != null;
+    }
+
+    public boolean hasValidAuthTokenURL() {
+        return this.authTokenURL != null && !this.authTokenURL.isEmpty();
+    }
+
+    public String getAuthTokenURL() {
+        return this.authTokenURL;
+    }
+
+    public void setAuthTokenURL(String authTokenURL) {
+        this.authTokenURL = authTokenURL;
+    }
+
     @Override
     public String toString () {
         return new StringBuffer()
@@ -547,6 +610,9 @@ public class Config implements Parcelable
                 .append(" httpHeaders=").append(getHttpHeaders().toString())
                 .append(" maxLocations=").append(getMaxLocations())
                 .append(" postTemplate=").append(hasTemplate() ? getTemplate().toString() : null)
+                .append(" deviceId=").append(getDeviceId())
+                .append(" authToken=").append(getAuthToken())
+                .append(" authTokenURL=").append(getAuthTokenURL())
                 .append("]")
                 .toString();
     }
@@ -638,6 +704,15 @@ public class Config implements Parcelable
         }
         if (config2.hasTemplate()) {
             merger.setTemplate(config2.getTemplate());
+        }
+        if (config2.hasDeviceId()) {
+            merger.setDeviceId(config2.getDeviceId());
+        }
+        if (config2.hasAuthToken()) {
+            merger.setAuthToken(config2.getAuthToken());
+        }
+        if (config2.hasAuthTokenURL()) {
+            merger.setAuthTokenURL(config2.getAuthTokenURL());
         }
 
         return merger;

@@ -15,6 +15,9 @@ import com.marianhello.bgloc.data.sqlite.SQLiteLocationContract.LocationEntry;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class BackgroundLocation implements Parcelable {
     public static final int DELETED = 0;
     public static final int POST_PENDING = 1;
@@ -912,6 +915,9 @@ public class BackgroundLocation implements Parcelable {
         }
         if ("@time".equals(key)) {
             return time;
+        }
+        if ("@datetime".equals(key)) {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(this.time));
         }
         if ("@latitude".equals(key)) {
             return latitude;

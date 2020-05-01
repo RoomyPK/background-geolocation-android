@@ -110,7 +110,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter implements HttpPost
 
         File file = null;
         try {
-            file = batchManager.createBatch(batchStartMillis, syncThreshold, config.getTemplate());
+            file = batchManager.createBatch(batchStartMillis, syncThreshold, config.getTemplate(), config.getDeviceId(), config.getAuthToken());
         } catch (IOException e) {
             logger.error("Failed to create batch: {}", e.getMessage());
         }
@@ -126,7 +126,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter implements HttpPost
         httpHeaders.putAll(config.getHttpHeaders());
         httpHeaders.put("x-batch-id", String.valueOf(batchStartMillis));
 
-        if (uploadLocations(file, url, httpHeaders)) {
+        if (uploadLocations(file, url, httpHeaders, config)) {
             logger.info("Batch sync successful");
             batchManager.setBatchCompleted(batchStartMillis);
             if (file.delete()) {
@@ -140,7 +140,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter implements HttpPost
         }
     }
 
-    private boolean uploadLocations(File file, String url, HashMap httpHeaders) {
+    private boolean uploadLocations(File file, String url, HashMap httpHeaders, Config config) {
         NotificationCompat.Builder builder = null;
 
         if (notificationsEnabled) {
@@ -154,6 +154,24 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter implements HttpPost
 
         try {
             int responseCode = HttpPostService.postJSONFile(url, file, httpHeaders, this);
+
+            if (responseCode == 401) {
+
+                logger.debug("Location was sent to the server, and received an \"HTTP 401 Unauthorized\"");
+
+                logger.debug("Attempting to renew auth token.");
+
+                String authToken = HttpPostService.getAuthToken(config.getAuthTokenURL(), config.getDeviceId());
+
+                if (authToken == null || authToken.isEmpty()) {
+                    logger.debug("Failed to renew auth token.");
+                } else {
+                    config.setAuthToken(authToken);
+                    configDAO.persistAuthToken(config);
+                    logger.debug("Successfully renewed auth token.");
+                    responseCode = HttpPostService.postJSONFile(url, file, httpHeaders, this);
+                }
+            }
 
             // All 2xx statuses are okay
             boolean isStatusOkay = responseCode >= 200 && responseCode < 300;
@@ -169,6 +187,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter implements HttpPost
             }
 
             if (responseCode == 401) {
+
+                logger.debug("Location was sent to the server, and received an \"HTTP 401 Unauthorized\"");
+
                 Bundle bundle = new Bundle();
                 bundle.putInt("action", LocationServiceImpl.MSG_ON_HTTP_AUTHORIZATION);
                 broadcastMessage(bundle);

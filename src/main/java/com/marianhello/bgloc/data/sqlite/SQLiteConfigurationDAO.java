@@ -56,7 +56,10 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
       ConfigurationEntry.COLUMN_NAME_SYNC_THRESHOLD,
       ConfigurationEntry.COLUMN_NAME_HEADERS,
       ConfigurationEntry.COLUMN_NAME_MAX_LOCATIONS,
-      ConfigurationEntry.COLUMN_NAME_TEMPLATE
+      ConfigurationEntry.COLUMN_NAME_TEMPLATE,
+      ConfigurationEntry.COLUMN_NAME_DEVICE_ID,
+      ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN,
+      ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL,
     };
 
     String whereClause = null;
@@ -97,6 +100,16 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     }
   }
 
+  public boolean persistAuthToken(Config config) throws NullPointerException {
+    long rowId = db.replace(ConfigurationEntry.TABLE_NAME, ConfigurationEntry.COLUMN_NAME_NULLABLE, getAuthTokenContentValue(config));
+    Log.d(TAG, "Configuration::AuthToken persisted with rowId = " + rowId);
+    if (rowId > -1) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   private Config hydrate(Cursor c) throws JSONException {
     Config config = Config.getDefault();
     config.setStationaryRadius(c.getFloat(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_RADIUS)));
@@ -123,6 +136,9 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     config.setHttpHeaders(new JSONObject(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_HEADERS))));
     config.setMaxLocations(c.getInt(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_MAX_LOCATIONS)));
     config.setTemplate(LocationTemplateFactory.fromJSONString(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_TEMPLATE))));
+    config.setDeviceId(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_DEVICE_ID)));
+    config.setAuthToken(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN)));
+    config.setAuthTokenURL(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL)));
 
     return config;
   }
@@ -154,7 +170,17 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     values.put(ConfigurationEntry.COLUMN_NAME_HEADERS, new JSONObject(config.getHttpHeaders()).toString());
     values.put(ConfigurationEntry.COLUMN_NAME_MAX_LOCATIONS, config.getMaxLocations());
     values.put(ConfigurationEntry.COLUMN_NAME_TEMPLATE, config.hasTemplate() ? config.getTemplate().toString() : null);
+    values.put(ConfigurationEntry.COLUMN_NAME_DEVICE_ID, config.getDeviceId());
+    values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN, config.getAuthToken());
+    values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL, config.getAuthTokenURL());
 
+    return values;
+  }
+
+  private ContentValues getAuthTokenContentValue(Config config) throws NullPointerException {
+    ContentValues values = new ContentValues();
+    values.put(ConfigurationEntry._ID, 1);
+    values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN, config.getAuthToken());
     return values;
   }
 }

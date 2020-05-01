@@ -40,6 +40,9 @@ public final class SQLiteConfigurationContract {
         public static final String COLUMN_NAME_HEADERS = "http_headers";
         public static final String COLUMN_NAME_MAX_LOCATIONS = "max_locations";
         public static final String COLUMN_NAME_TEMPLATE = "template";
+        public static final String COLUMN_NAME_DEVICE_ID = "device_id";
+        public static final String COLUMN_NAME_AUTH_TOKEN = "auth_token";
+        public static final String COLUMN_NAME_AUTH_TOKEN_URL = "auth_token_url";
 
         public static final String SQL_CREATE_CONFIG_TABLE =
                 "CREATE TABLE " + ConfigurationEntry.TABLE_NAME + " (" +
@@ -67,7 +70,10 @@ public final class SQLiteConfigurationContract {
                         ConfigurationEntry.COLUMN_NAME_SYNC_THRESHOLD + INTEGER_TYPE + COMMA_SEP +
                         ConfigurationEntry.COLUMN_NAME_HEADERS + TEXT_TYPE + COMMA_SEP +
                         ConfigurationEntry.COLUMN_NAME_MAX_LOCATIONS + INTEGER_TYPE + COMMA_SEP +
-                        ConfigurationEntry.COLUMN_NAME_TEMPLATE + TEXT_TYPE +
+                        ConfigurationEntry.COLUMN_NAME_TEMPLATE + TEXT_TYPE + COMMA_SEP +
+                        ConfigurationEntry.COLUMN_NAME_DEVICE_ID + TEXT_TYPE + COMMA_SEP +
+                        ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN + TEXT_TYPE + COMMA_SEP +
+                        ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL + TEXT_TYPE +
                         " )";
 
         public static final String SQL_DROP_CONFIG_TABLE =
