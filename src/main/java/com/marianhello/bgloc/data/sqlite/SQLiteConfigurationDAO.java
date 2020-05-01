@@ -101,9 +101,12 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
   }
 
   public boolean persistAuthToken(Config config) throws NullPointerException {
-    long rowId = db.replace(ConfigurationEntry.TABLE_NAME, ConfigurationEntry.COLUMN_NAME_NULLABLE, getAuthTokenContentValue(config));
-    Log.d(TAG, "Configuration::AuthToken persisted with rowId = " + rowId);
-    if (rowId > -1) {
+    String whereClause = ConfigurationEntry._ID + " = ?";
+    String[] whereClauseArgs = new String[1];
+    whereClauseArgs[0] = "1";
+    long affectedRowsCount = db.update(ConfigurationEntry.TABLE_NAME, getAuthTokenContentValue(config), whereClause, whereClauseArgs);
+    Log.d(TAG, "Configuration::AuthToken updated: affectedRowsCount = " + affectedRowsCount);
+    if (affectedRowsCount > 0) {
       return true;
     } else {
       return false;
@@ -179,7 +182,6 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
 
   private ContentValues getAuthTokenContentValue(Config config) throws NullPointerException {
     ContentValues values = new ContentValues();
-    values.put(ConfigurationEntry._ID, 1);
     values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN, config.getAuthToken());
     return values;
   }
