@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class BackgroundLocation implements Parcelable {
     public static final int DELETED = 0;
@@ -46,6 +47,8 @@ public class BackgroundLocation implements Parcelable {
     private Bundle extras = null;
 
     private static final long TWO_MINUTES_IN_NANOS = 1000000000L * 60 * 2;
+
+    private static SimpleDateFormat DATE_FORMATTER = null;
 
     public BackgroundLocation() {}
 
@@ -917,7 +920,11 @@ public class BackgroundLocation implements Parcelable {
             return time;
         }
         if ("@datetime".equals(key)) {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(this.time));
+            if (BackgroundLocation.DATE_FORMATTER == null) {
+                BackgroundLocation.DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                BackgroundLocation.DATE_FORMATTER.setTimeZone(TimeZone.getTimeZone("UTC"));
+            }
+            return BackgroundLocation.DATE_FORMATTER.format(new Date(this.time));
         }
         if ("@latitude".equals(key)) {
             return latitude;
