@@ -14,6 +14,8 @@ import com.marianhello.bgloc.data.ConfigurationDAO;
 import com.marianhello.bgloc.data.LocationTemplateFactory;
 import com.marianhello.bgloc.data.sqlite.SQLiteConfigurationContract.ConfigurationEntry;
 
+import java.util.HashMap;
+
 public class SQLiteConfigurationDAO implements ConfigurationDAO {
   private static final String TAG = SQLiteConfigurationDAO.class.getName();
 
@@ -136,7 +138,12 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     config.setUrl(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_URL)));
     config.setSyncUrl(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_SYNC_URL)));
     config.setSyncThreshold(c.getInt(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_SYNC_THRESHOLD)));
-    config.setHttpHeaders(new JSONObject(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_HEADERS))));
+    String httpHeaders = c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_HEADERS));
+    if (httpHeaders == null || httpHeaders.isEmpty()) {
+      config.setHttpHeaders(new HashMap<String, String>());
+    } else {
+      config.setHttpHeaders(new JSONObject(httpHeaders));
+    }
     config.setMaxLocations(c.getInt(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_MAX_LOCATIONS)));
     config.setTemplate(LocationTemplateFactory.fromJSONString(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_TEMPLATE))));
     config.setDeviceId(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_DEVICE_ID)));
