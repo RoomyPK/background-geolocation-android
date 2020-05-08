@@ -117,6 +117,7 @@ public class LocationServiceImpl extends Service implements ProviderDelegate, Lo
     private HandlerThread mHandlerThread;
     private ServiceHandler mServiceHandler;
     private LocationDAO mLocationDAO;
+    private ConfigurationDAO mConfigReadOnlyDAO;
     private PostLocationTask mPostLocationTask;
     private String mHeadlessTaskRunnerClass;
     private TaskRunner mHeadlessTaskRunner;
@@ -198,7 +199,10 @@ public class LocationServiceImpl extends Service implements ProviderDelegate, Lo
 
         mLocationDAO = DAOFactory.createLocationDAO(this);
 
+        mConfigReadOnlyDAO = DAOFactory.createReadOnlyConfigurationDAO(this);
+
         mPostLocationTask = new PostLocationTask(mLocationDAO,
+                mConfigReadOnlyDAO,
                 new PostLocationTask.PostLocationTaskListener() {
                     @Override
                     public void onRequestedAbortUpdates() {

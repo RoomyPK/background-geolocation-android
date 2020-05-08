@@ -14,4 +14,8 @@ public abstract class DAOFactory {
     public static ConfigurationDAO createConfigurationDAO(Context context) {
         return new SQLiteConfigurationDAO(context);
     }
+
+    public static ConfigurationDAO createReadOnlyConfigurationDAO(Context context) {
+        return new SQLiteConfigurationDAO(context, true);
+    }
 }

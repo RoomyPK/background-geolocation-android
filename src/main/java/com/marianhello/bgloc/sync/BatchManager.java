@@ -54,7 +54,7 @@ public class BatchManager {
         return LocationContentProvider.getContentUri(authority);
     }
 
-    private File createBatchFromTemplate(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken) throws IOException {
+    private File createBatchFromTemplate(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken, boolean syncIntervalElapsed) throws IOException {
         logger.info("Creating batch {}", batchStartMillis);
 
         ContentResolver resolver = context.getContentResolver();
@@ -83,8 +83,12 @@ public class BatchManager {
 
             );
 
-            if (cursor.getCount() < syncThreshold) {
-                return null;
+            final int count = cursor.getCount();
+
+            if (count < syncThreshold) {
+                if (count == 0 || !syncIntervalElapsed) {
+                    return null;
+                }
             }
 
             File file = File.createTempFile("locations", ".json");
@@ -127,18 +131,18 @@ public class BatchManager {
         }
     }
 
-    public File createBatch(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken) throws IOException {
+    public File createBatch(Long batchStartMillis, Integer syncThreshold, LocationTemplate template, String deviceId, String authToken, boolean syncIntervalElapsed) throws IOException {
         LocationTemplate tpl;
         if (template != null) {
             tpl = template;
         } else {
             tpl = LocationTemplateFactory.getDefault();
         }
-        return createBatchFromTemplate(batchStartMillis, syncThreshold, tpl, deviceId, authToken);
+        return createBatchFromTemplate(batchStartMillis, syncThreshold, tpl, deviceId, authToken, syncIntervalElapsed);
     }
 
     public File createBatch(Long batchStartMillis, Integer syncThreshold) throws IOException {
-        return createBatch(batchStartMillis, syncThreshold, null, "", "");
+        return createBatch(batchStartMillis, syncThreshold, null, "", "", false);
     }
 
 

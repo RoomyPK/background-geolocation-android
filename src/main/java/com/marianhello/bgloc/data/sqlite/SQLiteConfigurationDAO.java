@@ -19,11 +19,21 @@ import java.util.HashMap;
 public class SQLiteConfigurationDAO implements ConfigurationDAO {
   private static final String TAG = SQLiteConfigurationDAO.class.getName();
 
-    private SQLiteDatabase db;
+  private SQLiteDatabase db;
+  private boolean readOnly;
 
   public SQLiteConfigurationDAO(Context context) {
+    this(context, false);
+  }
+
+  public SQLiteConfigurationDAO(Context context, boolean readOnly) {
+    this.readOnly = readOnly;
     SQLiteOpenHelper helper = SQLiteOpenHelper.getHelper(context);
-    this.db = helper.getWritableDatabase();
+    if (this.readOnly) {
+      this.db = helper.getReadableDatabase();
+    } else {
+      this.db = helper.getWritableDatabase();
+    }
   }
 
   public SQLiteConfigurationDAO(SQLiteDatabase db) {
@@ -62,6 +72,8 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
       ConfigurationEntry.COLUMN_NAME_DEVICE_ID,
       ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN,
       ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL,
+      ConfigurationEntry.COLUMN_NAME_SYNC_INTERVAL,
+      ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME,
     };
 
     String whereClause = null;
@@ -92,7 +104,45 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     return config;
   }
 
+  public String retrieveLastSyncTime() throws JSONException {
+    Cursor cursor = null;
+
+    String[] columns = {
+      ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME,
+    };
+
+    String whereClause = null;
+    String[] whereArgs = null;
+    String groupBy = null;
+    String having = null;
+    String orderBy = null;
+
+    String lastSyncTime = "";
+    try {
+      cursor = db.query(
+              ConfigurationEntry.TABLE_NAME,  // The table to query
+              columns,                   // The columns to return
+              whereClause,               // The columns for the WHERE clause
+              whereArgs,                 // The values for the WHERE clause
+              groupBy,                   // don't group the rows
+              having,                    // don't filter by row groups
+              orderBy                    // The sort order
+      );
+      if (cursor.moveToFirst()) {
+        lastSyncTime = cursor.getString(cursor.getColumnIndex(ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME));
+      }
+    } finally {
+      if (cursor != null) {
+        cursor.close();
+      }
+    }
+    return lastSyncTime;
+  }
+
   public boolean persistConfiguration(Config config) throws NullPointerException {
+    if (this.readOnly) {
+      throw new NullPointerException("Cannot write to database as connection is readonly.");
+    }
     long rowId = db.replace(ConfigurationEntry.TABLE_NAME, ConfigurationEntry.COLUMN_NAME_NULLABLE, getContentValues(config));
     Log.d(TAG, "Configuration persisted with rowId = " + rowId);
     if (rowId > -1) {
@@ -103,11 +153,30 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
   }
 
   public boolean persistAuthToken(Config config) throws NullPointerException {
+    if (this.readOnly) {
+      throw new NullPointerException("Cannot write to database as connection is readonly.");
+    }
     String whereClause = ConfigurationEntry._ID + " = ?";
     String[] whereClauseArgs = new String[1];
     whereClauseArgs[0] = "1";
-    long affectedRowsCount = db.update(ConfigurationEntry.TABLE_NAME, getAuthTokenContentValue(config), whereClause, whereClauseArgs);
+    long affectedRowsCount = db.update(ConfigurationEntry.TABLE_NAME, this.getAuthTokenContentValue(config), whereClause, whereClauseArgs);
     Log.d(TAG, "Configuration::AuthToken updated: affectedRowsCount = " + affectedRowsCount);
+    if (affectedRowsCount > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public boolean updateLastSyncTime(Config config) throws NullPointerException {
+    if (this.readOnly) {
+      throw new NullPointerException("Cannot write to database as connection is readonly.");
+    }
+    String whereClause = ConfigurationEntry._ID + " = ?";
+    String[] whereClauseArgs = new String[1];
+    whereClauseArgs[0] = "1";
+    long affectedRowsCount = db.update(ConfigurationEntry.TABLE_NAME, this.getLastSyncTimeContentValue(config), whereClause, whereClauseArgs);
+    Log.d(TAG, "Configuration::LastSyncTime updated: lastSyncTime: " + config.getLastSyncTime() + "; affectedRowsCount = " + affectedRowsCount);
     if (affectedRowsCount > 0) {
       return true;
     } else {
@@ -149,6 +218,8 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     config.setDeviceId(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_DEVICE_ID)));
     config.setAuthToken(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN)));
     config.setAuthTokenURL(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL)));
+    config.setSyncInterval(c.getInt(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_SYNC_INTERVAL)));
+    config.setLastSyncTime(c.getString(c.getColumnIndex(ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME)));
 
     return config;
   }
@@ -183,6 +254,8 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
     values.put(ConfigurationEntry.COLUMN_NAME_DEVICE_ID, config.getDeviceId());
     values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN, config.getAuthToken());
     values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN_URL, config.getAuthTokenURL());
+    values.put(ConfigurationEntry.COLUMN_NAME_SYNC_INTERVAL, config.getSyncInterval());
+    values.put(ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME, config.getLastSyncTime());
 
     return values;
   }
@@ -190,6 +263,12 @@ public class SQLiteConfigurationDAO implements ConfigurationDAO {
   private ContentValues getAuthTokenContentValue(Config config) throws NullPointerException {
     ContentValues values = new ContentValues();
     values.put(ConfigurationEntry.COLUMN_NAME_AUTH_TOKEN, config.getAuthToken());
+    return values;
+  }
+
+  private ContentValues getLastSyncTimeContentValue(Config config) throws NullPointerException {
+    ContentValues values = new ContentValues();
+    values.put(ConfigurationEntry.COLUMN_NAME_LAST_SYNC_TIME, config.getLastSyncTime());
     return values;
   }
 }

@@ -66,6 +66,8 @@ public class Config implements Parcelable
     private String deviceId;
     private String authToken;
     private String authTokenURL;
+    private Integer syncInterval;
+    private String lastSyncTime;
 
     public Config () {
     }
@@ -101,6 +103,8 @@ public class Config implements Parcelable
         this.deviceId = config.deviceId;
         this.authToken = config.authToken;
         this.authTokenURL = config.authTokenURL;
+        this.syncInterval = config.syncInterval;
+        this.lastSyncTime = config.lastSyncTime;
     }
 
     private Config(Parcel in) {
@@ -132,6 +136,8 @@ public class Config implements Parcelable
         setDeviceId(in.readString());
         setAuthToken(in.readString());
         setAuthTokenURL(in.readString());
+        setSyncInterval(in.readInt());
+        setLastSyncTime(in.readString());
     }
 
     public static Config getDefault() {
@@ -163,6 +169,8 @@ public class Config implements Parcelable
         config.deviceId = "";
         config.authToken = "";
         config.authTokenURL = "";
+        config.syncInterval = 900000; //milliseconds
+        config.lastSyncTime = "";
 
         return config;
     }
@@ -202,6 +210,8 @@ public class Config implements Parcelable
         out.writeString(getDeviceId());
         out.writeString(getAuthToken());
         out.writeString(getAuthTokenURL());
+        out.writeInt(getSyncInterval());
+        out.writeString(getLastSyncTime());
     }
 
     public static final Parcelable.Creator<Config> CREATOR
@@ -583,6 +593,35 @@ public class Config implements Parcelable
         this.authTokenURL = authTokenURL;
     }
 
+    public boolean hasSyncInterval() {
+        return this.syncInterval != null;
+    }
+
+    public Integer getSyncInterval() {
+        return this.syncInterval;
+    }
+
+    public void setSyncInterval(Integer syncInterval) {
+        this.syncInterval = syncInterval;
+    }
+
+    public boolean hasLastSyncTime() {
+        return this.lastSyncTime != null;
+    }
+
+    public boolean hasValidLastSyncTime() {
+        return this.lastSyncTime != null && !this.lastSyncTime.isEmpty();
+    }
+
+    public String getLastSyncTime() {
+        return this.lastSyncTime;
+    }
+
+    public void setLastSyncTime(String lastSyncTime) {
+        this.lastSyncTime = lastSyncTime;
+    }
+
+
     @Override
     public String toString () {
         return new StringBuffer()
@@ -613,6 +652,8 @@ public class Config implements Parcelable
                 .append(" deviceId=").append(getDeviceId())
                 .append(" authToken=").append(getAuthToken())
                 .append(" authTokenURL=").append(getAuthTokenURL())
+                .append(" syncInterval=").append(getSyncInterval())
+                .append(" lastSyncTime=").append(getLastSyncTime())
                 .append("]")
                 .toString();
     }
@@ -713,6 +754,12 @@ public class Config implements Parcelable
         }
         if (config2.hasAuthTokenURL()) {
             merger.setAuthTokenURL(config2.getAuthTokenURL());
+        }
+        if (config2.hasSyncInterval()) {
+            merger.setSyncInterval(config2.getSyncInterval());
+        }
+        if (config2.hasLastSyncTime()) {
+            merger.setLastSyncTime(config2.getLastSyncTime());
         }
 
         return merger;

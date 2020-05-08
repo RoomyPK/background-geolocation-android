@@ -1,6 +1,7 @@
 package com.marianhello.bgloc;
 
 import com.marianhello.bgloc.data.BackgroundLocation;
+import com.marianhello.bgloc.data.ConfigurationDAO;
 import com.marianhello.bgloc.data.LocationDAO;
 import com.marianhello.logging.LoggerManager;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class PostLocationTask {
     private final LocationDAO mLocationDAO;
+    private final ConfigurationDAO mConfigReadOnlyDAO;
     private final PostLocationTaskListener mTaskListener;
     private final ConnectivityListener mConnectivityListener;
 
@@ -46,11 +48,12 @@ public class PostLocationTask {
         void onHttpAuthorizationUpdates();
     }
 
-    public PostLocationTask(LocationDAO dao, PostLocationTaskListener taskListener,
+    public PostLocationTask(LocationDAO dao, ConfigurationDAO configReadOnlyDAO, PostLocationTaskListener taskListener,
                             ConnectivityListener connectivityListener) {
         logger = LoggerManager.getLogger(PostLocationTask.class);
         logger.info("Creating PostLocationTask");
 
+        mConfigReadOnlyDAO = configReadOnlyDAO;
         mLocationDAO = dao;
         mTaskListener = taskListener;
         mConnectivityListener = connectivityListener;
@@ -128,8 +131,19 @@ public class PostLocationTask {
         }
 
         if (mConfig.hasValidSyncUrl()) {
-            long syncLocationsCount = mLocationDAO.getLocationsForSyncCount(System.currentTimeMillis());
-            if (syncLocationsCount >= mConfig.getSyncThreshold()) {
+            Long currentTimeMillis = System.currentTimeMillis();
+            String lastSyncTime = "";
+            try {
+                lastSyncTime = mConfigReadOnlyDAO.retrieveLastSyncTime();
+                if (lastSyncTime != null && !lastSyncTime.isEmpty()) {
+                    mConfig.setLastSyncTime(lastSyncTime);
+                }
+            } catch (Exception exception) {
+                logger.debug("Encountered exception while retrieving lastSyncTime" + exception.toString());
+            }
+            boolean syncIntervalElapsed = !mConfig.hasValidLastSyncTime() || currentTimeMillis - Long.parseLong(mConfig.getLastSyncTime()) > mConfig.getSyncInterval();
+            long syncLocationsCount = mLocationDAO.getLocationsForSyncCount(currentTimeMillis);
+            if (syncLocationsCount >= mConfig.getSyncThreshold() || syncIntervalElapsed) {
                 logger.debug("Attempt to sync locations: {} threshold: {}", syncLocationsCount, mConfig.getSyncThreshold());
                 mTaskListener.onSyncRequested();
             }
